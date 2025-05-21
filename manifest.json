@@ -1,0 +1,16 @@
+{
+  "name": "Animal Art Adventure",
+  "short_name": "Animal Art",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#9F7AEA",
+  "theme_color": "#9F7AEA",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3069/3069172.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
