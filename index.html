@@ -2,492 +2,487 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Animal Art Adventure</title>
-   <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'Comic Sans MS', cursive, sans-serif;
-        -webkit-tap-highlight-color: transparent;
-    }
-    
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background-color: #EBF4FF;
-    }
-    
-    .app-container {
-        max-width: 800px;
-        margin: 0 auto;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-    }
-    
-    header {
-        background-color: #9F7AEA;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    main {
-        flex: 1;
-        overflow-y: auto;
-        padding: 15px;
-        padding-bottom: calc(70px + env(safe-area-inset-bottom));
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    footer {
-        background-color: #9F7AEA;
-        padding: 10px;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-    }
-    
-    nav {
-        display: flex;
-        justify-content: space-around;
-    }
-    
-    .nav-button {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background: none;
-        border: none;
-        color: white;
-        padding: 10px;
-        border-radius: 8px;
-        min-width: 60px;
-        min-height: 60px;
-        font-size: 14px;
-    }
-    
-    .nav-button.active {
-        background-color: rgba(255, 255, 255, 0.3);
-    }
-    
-    .nav-icon {
-        font-size: 28px;
-        margin-bottom: 4px;
-    }
-    
-    .nav-label {
-        font-size: 12px;
-    }
-    
-    /* Home Screen Styles */
-    .home-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        gap: 20px;
-    }
-    
-    .home-title {
-        color: #805AD5;
-        font-size: 24px;
-        text-align: center;
-    }
-    
-    .feature-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        width: 100%;
-        max-width: 400px;
-    }
-    
-    .feature-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    
-    .feature-card:active {
-        transform: scale(0.95);
-    }
-    
-    .feature-icon {
-        font-size: 36px;
-        margin-bottom: 10px;
-    }
-    
-    .feature-title {
-        font-size: 16px;
-        font-weight: bold;
-        color: #553C9A;
-    }
-    
-    /* Camera Screen Styles */
-    .camera-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        gap: 15px;
-    }
-    
-    .viewfinder {
-        width: 100%;
-        aspect-ratio: 1;
-        background-color: #000;
-        border-radius: 12px;
-        overflow: hidden;
-        position: relative;
-    }
-    
-    #camera-view {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .viewfinder-frame {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        border: 4px dashed #FFD700;
-        border-radius: 8px;
-        pointer-events: none;
-    }
-    
-    .camera-controls {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        width: 100%;
-    }
-    
-    .camera-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: white;
-        border: none;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    
-    .camera-button.capture {
-        width: 70px;
-        height: 70px;
-        background-color: #E53E3E;
-    }
-    
-    .camera-button.small {
-        width: 50px;
-        height: 50px;
-    }
-    
-    /* Drawing Screen Styles */
-    .drawing-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        gap: 10px;
-    }
-    
-    #drawing-canvas {
-        width: 100%;
-        aspect-ratio: 1;
-        background-color: white;
-        border-radius: 12px;
-        border: 2px solid #CBD5E0;
-        touch-action: none;
-    }
-    
-    .color-palette {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-    }
-    
-    .color-button {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: none;
-    }
-    
-    .color-button.active {
-        border: 3px solid #805AD5;
-    }
-    
-    .drawing-tools {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 10px;
-        background-color: #EDE9FE;
-        border-radius: 12px;
-    }
-    
-    .tool-button {
-        width: 45px;
-        height: 45px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .tool-button.active {
-        background-color: #805AD5;
-        color: white;
-    }
-    
-    .templates-row {
-        display: flex;
-        overflow-x: auto;
-        gap: 8px;
-        width: 100%;
-        padding: 5px 0;
-    }
-    
-    .template-item {
-        flex-shrink: 0;
-        width: 70px;
-        height: 70px;
-        background-color: white;
-        border-radius: 8px;
-        border: 2px solid #CBD5E0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .template-icon {
-        font-size: 28px;
-    }
-    
-    .template-label {
-        font-size: 10px;
-    }
-    
-    /* Gallery Screen Styles */
-    .gallery-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        gap: 15px;
-    }
-    
-    .gallery-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        width: 100%;
-    }
-    
-    .gallery-item {
-        aspect-ratio: 1;
-        border-radius: 12px;
-        overflow: hidden;
-        position: relative;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    
-    .gallery-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .gallery-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0,0,0,0);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s;
-    }
-    
-    .gallery-item:active .gallery-overlay {
-        background-color: rgba(0,0,0,0.3);
-    }
-    
-    .action-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        width: 100%;
-    }
-    
-    .action-button {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        padding: 10px 20px;
-        background-color: #EDE9FE;
-        color: #805AD5;
-        border: none;
-        border-radius: .5rem;
-        font-weight: 600;
-    }
-    
-    /* Puzzle Screen Styles */
-    .puzzle-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        height: 100%;
-        gap: 10px;
-    }
-    
-    .puzzle-images {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        width: 100%;
-        padding: 5px 0;
-    }
-    
-    .puzzle-image {
-        flex-shrink: 0;
-        width: 80px;
-        height: 80px;
-        border-radius: 8px;
-        overflow: hidden;
-        position: relative;
-    }
-    
-    .puzzle-image.active {
-        border: 3px solid #805AD5;
-    }
-    
-    .puzzle-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .difficulty-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        width: 100%;
-    }
-    
-    .difficulty-button {
-        padding: 10px 15px;
-        background-color: #E2E8F0;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-    }
-    
-    .difficulty-button.active {
-        background-color: #68D391;
-        color: white;
-    }
-    
-    .puzzle-preview {
-        width: 100%;
-        aspect-ratio: 1;
-        background-color: white;
-        border-radius: 12px;
-        border: 2px solid #CBD5E0;
-        padding: 10px;
-        position: relative;
-    }
-    
-    .puzzle-grid {
-        width: 100%;
-        height: 100%;
-        display: grid;
-        gap: 3px;
-    }
-    
-    .puzzle-grid.easy {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-    }
-    
-    .puzzle-grid.medium {
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr 1fr;
-    }
-    
-    .puzzle-piece {
-        background-color: #E2E8F0;
-        border-radius: 4px;
-    }
-    
-    .create-button {
-        padding: 12px 25px;
-        background-color: #805AD5;
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: bold;
-        box-shadow: 0 2px 6px rgba(129, 62, 226, 0.4);
-    }
-    
-    .create-button:disabled {
-        opacity: 0.5;
-    }
-    
-    .hidden {
-        display: none !important;
-    }
-    
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid rgba(255,255,255,0.3);
-        border-radius: 50%;
-        border-top: 4px solid #805AD5;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #EBF4FF; /* light blue background */
+            overscroll-behavior: none; /* prevents pull-to-refresh on iOS */
+        }
+        
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        header {
+            background-color: #9F7AEA; /* purple header */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            position: relative;
+        }
+        
+        footer {
+            background-color: #9F7AEA;
+            padding: 10px;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            color: white;
+            padding: 5px;
+            border-radius: 8px;
+        }
+        
+        .nav-button.active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+        }
+        
+        /* Home Screen Styles */
+        .home-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+        }
+        
+        .home-title {
+            color: #805AD5;
+            font-size: 24px;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .feature-card:active {
+            transform: scale(0.95);
+        }
+        
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .feature-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #553C9A;
+        }
+        
+        /* Camera Screen Styles */
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            gap: 15px;
+        }
+        
+        .viewfinder {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #camera-view {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .viewfinder-frame {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 4px dashed #FFD700;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        
+        .camera-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .camera-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .camera-button.capture {
+            width: 70px;
+            height: 70px;
+            background-color: #E53E3E;
+        }
+        
+        .camera-button.small {
+            width: 50px;
+            height: 50px;
+        }
+        
+        /* Drawing Screen Styles */
+        .drawing-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            gap: 10px;
+        }
+        
+        #drawing-canvas {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: white;
+            border-radius: 12px;
+            border: 2px solid #CBD5E0;
+            touch-action: none; /* Prevents scrolling while drawing */
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .color-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+        }
+        
+        .color-button.active {
+            border: 3px solid #805AD5;
+        }
+        
+        .drawing-tools {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px;
+            background-color: #EDE9FE;
+            border-radius: 12px;
+        }
+        
+        .tool-button {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tool-button.active {
+            background-color: #805AD5;
+            color: white;
+        }
+        
+        .templates-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            width: 100%;
+            padding: 5px 0;
+        }
+        
+        .template-item {
+            flex-shrink: 0;
+            width: 70px;
+            height: 70px;
+            background-color: white;
+            border-radius: 8px;
+            border: 2px solid #CBD5E0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .template-icon {
+            font-size: 28px;
+        }
+        
+        .template-label {
+            font-size: 10px;
+        }
+        
+        /* Gallery Screen Styles */
+        .gallery-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            gap: 15px;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .gallery-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .gallery-item:active .gallery-overlay {
+            background-color: rgba(0,0,0,0.3);
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 20px;
+            background-color: #EDE9FE;
+            color: #805AD5;
+            border: none;
+            border-radius:.5rem;
+            font-weight: 600;
+        }
+        
+        /* Puzzle Screen Styles */
+        .puzzle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            gap: 10px;
+        }
+        
+        .puzzle-images {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            width: 100%;
+            padding: 5px 0;
+        }
+        
+        .puzzle-image {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .puzzle-image.active {
+            border: 3px solid #805AD5;
+        }
+        
+        .puzzle-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .difficulty-button {
+            padding: 10px 15px;
+            background-color: #E2E8F0;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .difficulty-button.active {
+            background-color: #68D391;
+            color: white;
+        }
+        
+        .puzzle-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: white;
+            border-radius: 12px;
+            border: 2px solid #CBD5E0;
+            padding: 10px;
+            position: relative;
+        }
+        
+        .puzzle-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: 3px;
+        }
+        
+        .puzzle-grid.easy {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+        
+        .puzzle-grid.medium {
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+        }
+        
+        .puzzle-piece {
+            background-color: #E2E8F0;
+            border-radius: 4px;
+        }
+        
+        .create-button {
+            padding: 12px 25px;
+            background-color: #805AD5;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(129, 62, 226, 0.4);
+        }
+        
+        .create-button:disabled {
+            opacity: 0.5;
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid #805AD5;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* For Safari on iOS to prevent elastic scrolling */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -931,4 +926,510 @@
                     const templateItem = document.createElement('div');
                     templateItem.className = 'template-item';
                     
-                    const templateIcon = document.createElement('div
+                    const templateIcon = document.createElement('div');
+                    templateIcon.className = 'template-icon';
+                    templateIcon.textContent = template.icon;
+                    
+                    const templateLabel = document.createElement('div');
+                    templateLabel.className = 'template-label';
+                    templateLabel.textContent = template.label;
+                    
+                    templateItem.appendChild(templateIcon);
+                    templateItem.appendChild(templateLabel);
+                    templateItem.addEventListener('click', () => this.addTemplate(template));
+                    
+                    templatesRow.appendChild(templateItem);
+                });
+                
+                // Clear and Save buttons
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'action-buttons';
+                
+                const clearButton = document.createElement('button');
+                clearButton.className = 'action-button';
+                clearButton.innerHTML = '🗑️ Clear';
+                clearButton.addEventListener('click', () => this.clearCanvas());
+                
+                const saveButton = document.createElement('button');
+                saveButton.className = 'action-button';
+                saveButton.innerHTML = '💾 Save';
+                saveButton.addEventListener('click', () => this.saveDrawing());
+                
+                actionButtons.appendChild(clearButton);
+                actionButtons.appendChild(saveButton);
+                
+                // Add all elements to container
+                drawingContainer.appendChild(title);
+                drawingContainer.appendChild(canvasContainer);
+                drawingContainer.appendChild(colorPalette);
+                drawingContainer.appendChild(drawingTools);
+                drawingContainer.appendChild(templatesRow);
+                drawingContainer.appendChild(actionButtons);
+                
+                mainContent.appendChild(drawingContainer);
+                
+                // Initialize the canvas
+                this.initDrawingCanvas();
+            },
+            
+            initDrawingCanvas() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Set white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // If we're editing the last taken photo
+                if (this.photos.length > 0 && this.currentScreen === 'drawing') {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Draw the image centered and scaled to fit
+                        const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.9;
+                        const x = (canvas.width - img.width * scale) / 2;
+                        const y = (canvas.height - img.height * scale) / 2;
+                        
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    };
+                    img.src = this.photos[0].src;
+                }
+                
+                // Set up drawing events
+                canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+                canvas.addEventListener('mousemove', this.draw.bind(this));
+                canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+                canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', this.startDrawingTouch.bind(this));
+                canvas.addEventListener('touchmove', this.drawTouch.bind(this));
+                canvas.addEventListener('touchend', this.stopDrawing.bind(this));
+            },
+            
+            startDrawing(e) {
+                this.isDrawing = true;
+                this.lastX = e.offsetX;
+                this.lastY = e.offsetY;
+            },
+            
+            startDrawingTouch(e) {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const canvas = document.getElementById('drawing-canvas');
+                    const rect = canvas.getBoundingClientRect();
+                    this.lastX = touch.clientX - rect.left;
+                    this.lastY = touch.clientY - rect.top;
+                    this.isDrawing = true;
+                }
+            },
+            
+            draw(e) {
+                if (!this.isDrawing) return;
+                
+                const canvas = document.getElementById('drawing-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                if (this.currentTool === 'brush') {
+                    ctx.strokeStyle = this.currentColor;
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.lastX, this.lastY);
+                    ctx.lineTo(e.offsetX, e.offsetY);
+                    ctx.stroke();
+                    
+                    this.lastX = e.offsetX;
+                    this.lastY = e.offsetY;
+                } else if (this.currentTool === 'stamp') {
+                    // Simple stamp tool
+                    ctx.fillStyle = this.currentColor;
+                    ctx.beginPath();
+                    ctx.arc(e.offsetX, e.offsetY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            
+            drawTouch(e) {
+                e.preventDefault();
+                if (!this.isDrawing || e.touches.length !== 1) return;
+                
+                const touch = e.touches[0];
+                const canvas = document.getElementById('drawing-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const offsetX = touch.clientX - rect.left;
+                const offsetY = touch.clientY - rect.top;
+                
+                const ctx = canvas.getContext('2d');
+                
+                if (this.currentTool === 'brush') {
+                    ctx.strokeStyle = this.currentColor;
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.lastX, this.lastY);
+                    ctx.lineTo(offsetX, offsetY);
+                    ctx.stroke();
+                    
+                    this.lastX = offsetX;
+                    this.lastY = offsetY;
+                } else if (this.currentTool === 'stamp') {
+                    // Simple stamp tool
+                    ctx.fillStyle = this.currentColor;
+                    ctx.beginPath();
+                    ctx.arc(offsetX, offsetY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            
+            stopDrawing() {
+                this.isDrawing = false;
+            },
+            
+            selectColor(index) {
+                // Update active color
+                this.colors.forEach((colorObj, i) => {
+                    colorObj.active = (i === index);
+                });
+                this.currentColor = this.colors[index].color;
+                
+                // Update UI
+                const colorButtons = document.querySelectorAll('.color-button');
+                colorButtons.forEach((button, i) => {
+                    button.classList.toggle('active', i === index);
+                });
+            },
+            
+            selectTool(index) {
+                // Update active tool
+                this.tools.forEach((tool, i) => {
+                    tool.active = (i === index);
+                });
+                this.currentTool = this.tools[index].id;
+                
+                // Update UI
+                const toolButtons = document.querySelectorAll('.tool-button');
+                toolButtons.forEach((button, i) => {
+                    button.classList.toggle('active', i === index);
+                });
+            },
+            
+            addTemplate(template) {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Draw a template icon at the center
+                ctx.font = '60px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(template.icon, canvas.width / 2, canvas.height / 2);
+            },
+            
+            clearCanvas() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            },
+            
+            saveDrawing() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                // Get the image as data URL
+                const imageDataUrl = canvas.toDataURL('image/png');
+                
+                // Add to drawings array
+                this.drawings.unshift({
+                    src: imageDataUrl,
+                    thumbnail: imageDataUrl,
+                    timestamp: Date.now()
+                });
+                
+                alert('Drawing saved! You can find it in your gallery.');
+            },
+            
+            // Puzzle Screen
+            renderPuzzleScreen() {
+                const mainContent = document.getElementById('main-content');
+                
+                const puzzleContainer = document.createElement('div');
+                puzzleContainer.className = 'puzzle-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'Puzzle Creator';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                // Image selection section
+                const selectionSection = document.createElement('div');
+                selectionSection.className = 'selection-section';
+                
+                const imageLabel = document.createElement('p');
+                imageLabel.textContent = 'Select an image for your puzzle:';
+                imageLabel.style.color = '#805AD5';
+                imageLabel.style.fontSize = '14px';
+                
+                const puzzleImages = document.createElement('div');
+                puzzleImages.className = 'puzzle-images';
+                
+                // Combine photos and drawings for puzzle creation
+                const allImages = [...this.photos, ...this.drawings];
+                
+                allImages.slice(0, 6).forEach((image, index) => {
+                    const puzzleImage = document.createElement('div');
+                    puzzleImage.className = `puzzle-image ${this.selectedPuzzleImage === index ? 'active' : ''}`;
+                    puzzleImage.addEventListener('click', () => this.selectPuzzleImage(index));
+                    
+                    const img = document.createElement('img');
+                    img.src = image.thumbnail || image.src;
+                    img.alt = 'Puzzle image';
+                    
+                    puzzleImage.appendChild(img);
+                    puzzleImages.appendChild(puzzleImage);
+                });
+                
+                selectionSection.appendChild(imageLabel);
+                selectionSection.appendChild(puzzleImages);
+                
+                // Difficulty selection
+                const difficultySection = document.createElement('div');
+                difficultySection.className = 'difficulty-section';
+                
+                const difficultyLabel = document.createElement('p');
+                difficultyLabel.textContent = 'Choose puzzle difficulty:';
+                difficultyLabel.style.color = '#805AD5';
+                difficultyLabel.style.fontSize = '14px';
+                
+                const difficultyButtons = document.createElement('div');
+                difficultyButtons.className = 'difficulty-buttons';
+                
+                const easyButton = document.createElement('button');
+                easyButton.className = `difficulty-button ${this.puzzleDifficulty === 'easy' ? 'active' : ''}`;
+                easyButton.textContent = 'Easy (4 pieces)';
+                easyButton.addEventListener('click', () => this.setPuzzleDifficulty('easy'));
+                
+                const mediumButton = document.createElement('button');
+                mediumButton.className = `difficulty-button ${this.puzzleDifficulty === 'medium' ? 'active' : ''}`;
+                mediumButton.textContent = 'Medium (9 pieces)';
+                mediumButton.addEventListener('click', () => this.setPuzzleDifficulty('medium'));
+                
+                difficultyButtons.appendChild(easyButton);
+                difficultyButtons.appendChild(mediumButton);
+                
+                difficultySection.appendChild(difficultyLabel);
+                difficultySection.appendChild(difficultyButtons);
+                
+                // Puzzle preview
+                const puzzlePreview = document.createElement('div');
+                puzzlePreview.className = 'puzzle-preview';
+                
+                if (this.selectedPuzzleImage !== null && allImages[this.selectedPuzzleImage]) {
+                    const puzzleGrid = document.createElement('div');
+                    puzzleGrid.className = `puzzle-grid ${this.puzzleDifficulty}`;
+                    
+                    const pieces = this.puzzleDifficulty === 'easy' ? 4 : 9;
+                    
+                    for (let i = 0; i < pieces; i++) {
+                        const puzzlePiece = document.createElement('div');
+                        puzzlePiece.className = 'puzzle-piece';
+                        puzzleGrid.appendChild(puzzlePiece);
+                    }
+                    
+                    puzzlePreview.appendChild(puzzleGrid);
+                } else {
+                    const placeholderText = document.createElement('div');
+                    placeholderText.style.width = '100%';
+                    placeholderText.style.height = '100%';
+                    placeholderText.style.display = 'flex';
+                    placeholderText.style.alignItems = 'center';
+                    placeholderText.style.justifyContent = 'center';
+                    placeholderText.style.color = '#CBD5E0';
+                    placeholderText.textContent = 'Select an image to create a puzzle!';
+                    
+                    puzzlePreview.appendChild(placeholderText);
+                }
+                
+                // Create button
+                const createButton = document.createElement('button');
+                createButton.className = 'create-button';
+                createButton.textContent = 'Create My Puzzle!';
+                createButton.disabled = this.selectedPuzzleImage === null;
+                createButton.addEventListener('click', () => this.createPuzzle());
+                
+                // Add all sections to container
+                puzzleContainer.appendChild(title);
+                puzzleContainer.appendChild(selectionSection);
+                puzzleContainer.appendChild(difficultySection);
+                puzzleContainer.appendChild(puzzlePreview);
+                puzzleContainer.appendChild(createButton);
+                
+                mainContent.appendChild(puzzleContainer);
+            },
+            
+            selectPuzzleImage(index) {
+                this.selectedPuzzleImage = index;
+                this.navigateToScreen('puzzle'); // Refresh the screen
+            },
+            
+            setPuzzleDifficulty(difficulty) {
+                this.puzzleDifficulty = difficulty;
+                this.navigateToScreen('puzzle'); // Refresh the screen
+            },
+            
+            createPuzzle() {
+                // In a real app, this would create an interactive puzzle
+                // For this demo, we'll just show a success message
+                alert('Puzzle created! You can now play with it.');
+                
+                // In a real implementation, you would:
+                // 1. Create a canvas with the selected image
+                // 2. Divide it into pieces based on difficulty
+                // 3. Randomize piece positions
+                // 4. Create an interactive drag-and-drop puzzle game
+            },
+            
+            // Gallery Screen
+            renderGalleryScreen() {
+                const mainContent = document.getElementById('main-content');
+                
+                const galleryContainer = document.createElement('div');
+                galleryContainer.className = 'gallery-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'My Gallery';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                // Grid of images
+                const galleryGrid = document.createElement('div');
+                galleryGrid.className = 'gallery-grid';
+                
+                // Combine photos and drawings for display
+                const allItems = [...this.photos, ...this.drawings];
+                
+                if (allItems.length === 0) {
+                    const emptyMessage = document.createElement('p');
+                    emptyMessage.textContent = 'Your gallery is empty. Take some photos or create drawings!';
+                    emptyMessage.style.textAlign = 'center';
+                    emptyMessage.style.color = '#805AD5';
+                    galleryContainer.appendChild(emptyMessage);
+                } else {
+                    allItems.forEach((item, index) => {
+                        const galleryItem = document.createElement('div');
+                        galleryItem.className = 'gallery-item';
+                        
+                        const img = document.createElement('img');
+                        img.className = 'gallery-image';
+                        img.src = item.thumbnail || item.src;
+                        img.alt = 'Gallery item';
+                        
+                        const overlay = document.createElement('div');
+                        overlay.className = 'gallery-overlay';
+                        
+                        galleryItem.appendChild(img);
+                        galleryItem.appendChild(overlay);
+                        galleryItem.addEventListener('click', () => this.viewGalleryItem(index));
+                        
+                        galleryGrid.appendChild(galleryItem);
+                    });
+                }
+                
+                // Action buttons
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'action-buttons';
+                
+                const saveButton = document.createElement('button');
+                saveButton.className = 'action-button';
+                saveButton.innerHTML = '💾 Save';
+                saveButton.addEventListener('click', () => this.saveAllToDevice());
+                
+                const printButton = document.createElement('button');
+                printButton.className = 'action-button';
+                printButton.innerHTML = '🖨️ Print';
+                printButton.addEventListener('click', () => this.printGallery());
+                
+                const shareButton = document.createElement('button');
+                shareButton.className = 'action-button';
+                shareButton.innerHTML = '📤 Share';
+                shareButton.addEventListener('click', () => this.shareGallery());
+                
+                actionButtons.appendChild(saveButton);
+                actionButtons.appendChild(printButton);
+                actionButtons.appendChild(shareButton);
+                
+                // Add all sections to container
+                galleryContainer.appendChild(title);
+                galleryContainer.appendChild(galleryGrid);
+                galleryContainer.appendChild(actionButtons);
+                
+                mainContent.appendChild(galleryContainer);
+            },
+            
+            viewGalleryItem(index) {
+                // In a real app, this would open a fullscreen view
+                const allItems = [...this.photos, ...this.drawings];
+                
+                if (allItems[index]) {
+                    // Create a modal to view the image
+                    const modal = document.createElement('div');
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.width = '100%';
+                    modal.style.height = '100%';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.zIndex = '9999';
+                    
+                    const img = document.createElement('img');
+                    img.src = allItems[index].src;
+                    img.style.maxWidth = '90%';
+                    img.style.maxHeight = '90%';
+                    img.style.objectFit = 'contain';
+                    
+                    modal.appendChild(img);
+                    document.body.appendChild(modal);
+                    
+                    // Close modal when clicked
+                    modal.addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                    });
+                }
+            },
+            
+            saveAllToDevice() {
+                alert('On a real device, this would save all images to your photo library!');
+                // In a real app, this would use the device's file system API
+            },
+            
+            printGallery() {
+                alert('On a real device, this would open the print dialog!');
+                // In a real app, this would use the device's print API
+            },
+            
+            shareGallery() {
+                alert('On a real device, this would open sharing options!');
+                // In a real app, this would use the Web Share API
+            }
+        };
+        
+        // Start the app when the page loads
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
