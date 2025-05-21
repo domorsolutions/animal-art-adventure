@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,10 +21,39 @@
             overscroll-behavior: none; /* prevents pull-to-refresh on iOS */
         }
         
+        /* For Safari on iOS to prevent elastic scrolling while ensuring the bottom nav is visible */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Ensure bottom nav is visible on iPad Safari */
+        footer {
+            background-color: #9F7AEA;
+            padding: 10px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            position: relative;
+            z-index: 100;
+        }
+        
+        /* Add bottom padding to main content to prevent it from being hidden behind nav */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            position: relative;
+            padding-bottom: 20px;
+            margin-bottom: 0;
+        }
+        
+        /* Ensure app container accounts for iOS safe areas */
         .app-container {
             max-width: 800px;
             margin: 0 auto;
             height: 100vh;
+            height: calc(100vh - env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
             position: relative;
@@ -38,21 +67,10 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            position: relative;
-        }
-        
-        footer {
-            background-color: #9F7AEA;
-            padding: 10px;
-        }
-        
         nav {
             display: flex;
             justify-content: space-around;
+            padding-bottom: env(safe-area-inset-bottom, 0);
         }
         
         .nav-button {
@@ -64,6 +82,8 @@
             color: white;
             padding: 5px;
             border-radius: 8px;
+            min-width: 50px;
+            min-height: 50px;
         }
         
         .nav-button.active {
@@ -473,14 +493,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-        
-        /* For Safari on iOS to prevent elastic scrolling */
-        html, body {
-            position: fixed;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
         }
     </style>
 </head>
