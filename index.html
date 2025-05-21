@@ -1,4 +1,877 @@
-<!DOCTYPE html>
+// Show capture animation
+                const viewfinder = document.querySelector('.viewfinder');
+                if (viewfinder) {
+                    viewfinder.style.transition = 'opacity 0.1s';
+                    viewfinder.style.opacity = '0.5';
+                    setTimeout(() => {
+                        viewfinder.style.opacity = '1';
+                    }, 100);
+                }
+                
+                // Optionally navigate to gallery or drawing
+                setTimeout(() => {
+                    if (confirm('Great photo! Do you want to draw on it?')) {
+                        this.navigateToScreen('drawing');
+                    }
+                }, 300);
+            },
+            
+            // Drawing Screen
+            renderDrawingScreen() {
+                const mainContent = document.getElementById('main-content');
+                
+                const drawingContainer = document.createElement('div');
+                drawingContainer.className = 'drawing-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'Drawing Studio';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                // Create canvas for drawing
+                const canvasContainer = document.createElement('div');
+                canvasContainer.style.width = '100%';
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = 'drawing-canvas';
+                canvas.width = 800;
+                canvas.height = 800;
+                
+                canvasContainer.appendChild(canvas);
+                
+                // Color palette
+                const colorPalette = document.createElement('div');
+                colorPalette.className = 'color-palette';
+                
+                this.colors.forEach((colorObj, index) => {
+                    const colorButton = document.createElement('button');
+                    colorButton.className = `color-button ${colorObj.active ? 'active' : ''}`;
+                    colorButton.style.backgroundColor = colorObj.color;
+                    colorButton.dataset.color = colorObj.color;
+                    colorButton.addEventListener('click', () => this.selectColor(index));
+                    colorPalette.appendChild(colorButton);
+                });
+                
+                // Drawing tools
+                const drawingTools = document.createElement('div');
+                drawingTools.className = 'drawing-tools';
+                
+                this.tools.forEach((tool, index) => {
+                    const toolButton = document.createElement('button');
+                    toolButton.className = `tool-button ${tool.active ? 'active' : ''}`;
+                    toolButton.textContent = tool.icon;
+                    toolButton.dataset.tool = tool.id;
+                    toolButton.addEventListener('click', () => this.selectTool(index));
+                    drawingTools.appendChild(toolButton);
+                });
+                
+                // Templates row
+                const templatesRow = document.createElement('div');
+                templatesRow.className = 'templates-row';
+                
+                this.templates.forEach(template => {
+                    const templateItem = document.createElement('div');
+                    templateItem.className = 'template-item';
+                    
+                    const templateIcon = document.createElement('div');
+                    templateIcon.className = 'template-icon';
+                    templateIcon.textContent = template.icon;
+                    
+                    const templateLabel = document.createElement('div');
+                    templateLabel.className = 'template-label';
+                    templateLabel.textContent = template.label;
+                    
+                    templateItem.appendChild(templateIcon);
+                    templateItem.appendChild(templateLabel);
+                    templateItem.addEventListener('click', () => this.addTemplate(template));
+                    
+                    templatesRow.appendChild(templateItem);
+                });
+                
+                // Clear and Save buttons
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'action-buttons';
+                
+                const clearButton = document.createElement('button');
+                clearButton.className = 'action-button';
+                clearButton.innerHTML = '🗑️ Clear';
+                clearButton.addEventListener('click', () => this.clearCanvas());
+                
+                const saveButton = document.createElement('button');
+                saveButton.className = 'action-button';
+                saveButton.innerHTML = '💾 Save';
+                saveButton.addEventListener('click', () => this.saveDrawing());
+                
+                actionButtons.appendChild(clearButton);
+                actionButtons.appendChild(saveButton);
+                
+                // Add all elements to container
+                drawingContainer.appendChild(title);
+                drawingContainer.appendChild(canvasContainer);
+                drawingContainer.appendChild(colorPalette);
+                drawingContainer.appendChild(drawingTools);
+                drawingContainer.appendChild(templatesRow);
+                drawingContainer.appendChild(actionButtons);
+                
+                mainContent.appendChild(drawingContainer);
+                
+                // Initialize the canvas
+                this.initDrawingCanvas();
+            },
+            
+            initDrawingCanvas() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Set white background
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // If we're editing the last taken photo
+                if (this.photos.length > 0 && this.currentScreen === 'drawing') {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Draw the image centered and scaled to fit
+                        const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.9;
+                        const x = (canvas.width - img.width * scale) / 2;
+                        const y = (canvas.height - img.height * scale) / 2;
+                        
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    };
+                    img.src = this.photos[0].src;
+                }
+                
+                // Set up drawing events
+                canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+                canvas.addEventListener('mousemove', this.draw.bind(this));
+                canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+                canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', this.startDrawingTouch.bind(this));
+                canvas.addEventListener('touchmove', this.drawTouch.bind(this));
+                canvas.addEventListener('touchend', this.stopDrawing.bind(this));
+            },
+            
+            startDrawing(e) {
+                this.isDrawing = true;
+                this.lastX = e.offsetX;
+                this.lastY = e.offsetY;
+            },
+            
+            startDrawingTouch(e) {
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const canvas = document.getElementById('drawing-canvas');
+                    const rect = canvas.getBoundingClientRect();
+                    this.lastX = touch.clientX - rect.left;
+                    this.lastY = touch.clientY - rect.top;
+                    this.isDrawing = true;
+                }
+            },
+            
+            draw(e) {
+                if (!this.isDrawing) return;
+                
+                const canvas = document.getElementById('drawing-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                if (this.currentTool === 'brush') {
+                    ctx.strokeStyle = this.currentColor;
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.lastX, this.lastY);
+                    ctx.lineTo(e.offsetX, e.offsetY);
+                    ctx.stroke();
+                    
+                    this.lastX = e.offsetX;
+                    this.lastY = e.offsetY;
+                } else if (this.currentTool === 'stamp') {
+                    // Simple stamp tool
+                    ctx.fillStyle = this.currentColor;
+                    ctx.beginPath();
+                    ctx.arc(e.offsetX, e.offsetY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            
+            drawTouch(e) {
+                e.preventDefault();
+                if (!this.isDrawing || e.touches.length !== 1) return;
+                
+                const touch = e.touches[0];
+                const canvas = document.getElementById('drawing-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const offsetX = touch.clientX - rect.left;
+                const offsetY = touch.clientY - rect.top;
+                
+                const ctx = canvas.getContext('2d');
+                
+                if (this.currentTool === 'brush') {
+                    ctx.strokeStyle = this.currentColor;
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.lastX, this.lastY);
+                    ctx.lineTo(offsetX, offsetY);
+                    ctx.stroke();
+                    
+                    this.lastX = offsetX;
+                    this.lastY = offsetY;
+                } else if (this.currentTool === 'stamp') {
+                    // Simple stamp tool
+                    ctx.fillStyle = this.currentColor;
+                    ctx.beginPath();
+                    ctx.arc(offsetX, offsetY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            
+            stopDrawing() {
+                this.isDrawing = false;
+            },
+            
+            selectColor(index) {
+                // Update active color
+                this.colors.forEach((colorObj, i) => {
+                    colorObj.active = (i === index);
+                });
+                this.currentColor = this.colors[index].color;
+                
+                // Update UI
+                const colorButtons = document.querySelectorAll('.color-button');
+                colorButtons.forEach((button, i) => {
+                    button.classList.toggle('active', i === index);
+                });
+            },
+            
+            selectTool(index) {
+                // Update active tool
+                this.tools.forEach((tool, i) => {
+                    tool.active = (i === index);
+                });
+                this.currentTool = this.tools[index].id;
+                
+                // Update UI
+                const toolButtons = document.querySelectorAll('.tool-button');
+                toolButtons.forEach((button, i) => {
+                    button.classList.toggle('active', i === index);
+                });
+            },
+            
+            addTemplate(template) {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Draw a template icon at the center
+                ctx.font = '60px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(template.icon, canvas.width / 2, canvas.height / 2);
+            },
+            
+            clearCanvas() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            },
+            
+            saveDrawing() {
+                const canvas = document.getElementById('drawing-canvas');
+                if (!canvas) return;
+                
+                // Get the image as data URL
+                const imageDataUrl = canvas.toDataURL('image/png');
+                
+                // Add to drawings array
+                this.drawings.unshift({
+                    src: imageDataUrl,
+                    thumbnail: imageDataUrl,
+                    timestamp: Date.now()
+                });
+                
+                alert('Drawing saved! You can find it in your gallery.');
+            },
+            
+            // Puzzle Screen
+            renderPuzzleScreen() {
+                const mainContent = document.getElementById('main-content');
+                
+                const puzzleContainer = document.createElement('div');
+                puzzleContainer.className = 'puzzle-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'Puzzle Creator';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                // Image selection section
+                const selectionSection = document.createElement('div');
+                selectionSection.className = 'selection-section';
+                
+                const imageLabel = document.createElement('p');
+                imageLabel.textContent = 'Select an image for your puzzle:';
+                imageLabel.style.color = '#805AD5';
+                imageLabel.style.fontSize = '14px';
+                
+                const puzzleImages = document.createElement('div');
+                puzzleImages.className = 'puzzle-images';
+                
+                // Combine photos and drawings for puzzle creation
+                const allImages = [...this.photos, ...this.drawings];
+                
+                if (allImages.length === 0) {
+                    // No images available - prompt to create some first
+                    const emptyMessage = document.createElement('p');
+                    emptyMessage.textContent = 'Take some photos or create drawings first!';
+                    emptyMessage.style.textAlign = 'center';
+                    emptyMessage.style.color = '#805AD5';
+                    
+                    puzzleContainer.appendChild(title);
+                    puzzleContainer.appendChild(emptyMessage);
+                    
+                    const createButton = document.createElement('button');
+                    createButton.className = 'action-button';
+                    createButton.innerHTML = '📷 Take Photos';
+                    createButton.addEventListener('click', () => this.navigateToScreen('camera'));
+                    puzzleContainer.appendChild(createButton);
+                    
+                    mainContent.appendChild(puzzleContainer);
+                    return;
+                }
+                
+                allImages.slice(0, 6).forEach((image, index) => {
+                    const puzzleImage = document.createElement('div');
+                    puzzleImage.className = `puzzle-image ${this.selectedPuzzleImage === index ? 'active' : ''}`;
+                    puzzleImage.addEventListener('click', () => this.selectPuzzleImage(index));
+                    
+                    const img = document.createElement('img');
+                    img.src = image.thumbnail || image.src;
+                    img.alt = 'Puzzle image';
+                    
+                    puzzleImage.appendChild(img);
+                    puzzleImages.appendChild(puzzleImage);
+                });
+                
+                selectionSection.appendChild(imageLabel);
+                selectionSection.appendChild(puzzleImages);
+                
+                // Difficulty selection
+                const difficultySection = document.createElement('div');
+                difficultySection.className = 'difficulty-section';
+                
+                const difficultyLabel = document.createElement('p');
+                difficultyLabel.textContent = 'Choose puzzle difficulty:';
+                difficultyLabel.style.color = '#805AD5';
+                difficultyLabel.style.fontSize = '14px';
+                
+                const difficultyButtons = document.createElement('div');
+                difficultyButtons.className = 'difficulty-buttons';
+                
+                const easyButton = document.createElement('button');
+                easyButton.className = `difficulty-button ${this.puzzleDifficulty === 'easy' ? 'active' : ''}`;
+                easyButton.textContent = 'Easy (4 pieces)';
+                easyButton.addEventListener('click', () => this.setPuzzleDifficulty('easy'));
+                
+                const mediumButton = document.createElement('button');
+                mediumButton.className = `difficulty-button ${this.puzzleDifficulty === 'medium' ? 'active' : ''}`;
+                mediumButton.textContent = 'Medium (9 pieces)';
+                mediumButton.addEventListener('click', () => this.setPuzzleDifficulty('medium'));
+                
+                difficultyButtons.appendChild(easyButton);
+                difficultyButtons.appendChild(mediumButton);
+                
+                difficultySection.appendChild(difficultyLabel);
+                difficultySection.appendChild(difficultyButtons);
+                
+                // Puzzle preview
+                const puzzlePreview = document.createElement('div');
+                puzzlePreview.className = 'puzzle-preview';
+                
+                if (this.selectedPuzzleImage !== null && allImages[this.selectedPuzzleImage]) {
+                    const puzzleGrid = document.createElement('div');
+                    puzzleGrid.className = `puzzle-grid ${this.puzzleDifficulty}`;
+                    
+                    const pieces = this.puzzleDifficulty === 'easy' ? 4 : 9;
+                    
+                    // Create actual puzzle pieces with the image
+                    const selectedImage = allImages[this.selectedPuzzleImage];
+                    const img = new Image();
+                    img.src = selectedImage.src;
+                    
+                    // Create puzzle pieces
+                    for (let i = 0; i < pieces; i++) {
+                        const puzzlePiece = document.createElement('div');
+                        puzzlePiece.className = 'puzzle-piece';
+                        
+                        // Add image as background of the piece
+                        puzzlePiece.style.backgroundImage = `url(${selectedImage.src})`;
+                        
+                        // Calculate background position based on grid
+                        if (this.puzzleDifficulty === 'easy') {
+                            // 2x2 grid
+                            const row = Math.floor(i / 2);
+                            const col = i % 2;
+                            puzzlePiece.style.backgroundSize = '200%';
+                            puzzlePiece.style.backgroundPosition = `${col * 100}% ${row * 100}%`;
+                        } else {
+                            // 3x3 grid
+                            const row = Math.floor(i / 3);
+                            const col = i % 3;
+                            puzzlePiece.style.backgroundSize = '300%';
+                            puzzlePiece.style.backgroundPosition = `${col * 50}% ${row * 50}%`;
+                        }
+                        
+                        puzzleGrid.appendChild(puzzlePiece);
+                    }
+                    
+                    puzzlePreview.appendChild(puzzleGrid);
+                } else {
+                    const placeholderText = document.createElement('div');
+                    placeholderText.style.width = '100%';
+                    placeholderText.style.height = '100%';
+                    placeholderText.style.display = 'flex';
+                    placeholderText.style.alignItems = 'center';
+                    placeholderText.style.justifyContent = 'center';
+                    placeholderText.style.color = '#CBD5E0';
+                    placeholderText.textContent = 'Select an image to create a puzzle!';
+                    
+                    puzzlePreview.appendChild(placeholderText);
+                }
+                
+                // Create button
+                const createButton = document.createElement('button');
+                createButton.className = 'create-button';
+                createButton.textContent = 'Create My Puzzle!';
+                createButton.disabled = this.selectedPuzzleImage === null;
+                createButton.addEventListener('click', () => this.createPuzzle());
+                
+                // Add all sections to container
+                puzzleContainer.appendChild(title);
+                puzzleContainer.appendChild(selectionSection);
+                puzzleContainer.appendChild(difficultySection);
+                puzzleContainer.appendChild(puzzlePreview);
+                puzzleContainer.appendChild(createButton);
+                
+                mainContent.appendChild(puzzleContainer);
+            },
+            
+            selectPuzzleImage(index) {
+                this.selectedPuzzleImage = index;
+                this.navigateToScreen('puzzle'); // Refresh the screen
+            },
+            
+            setPuzzleDifficulty(difficulty) {
+                this.puzzleDifficulty = difficulty;
+                this.navigateToScreen('puzzle'); // Refresh the screen
+            },
+            
+            createPuzzle() {
+                // Get selected image
+                const allImages = [...this.photos, ...this.drawings];
+                if (this.selectedPuzzleImage === null || !allImages[this.selectedPuzzleImage]) {
+                    alert('Please select an image first!');
+                    return;
+                }
+                
+                // Create a playable puzzle
+                const mainContent = document.getElementById('main-content');
+                mainContent.innerHTML = '';
+                
+                const puzzleContainer = document.createElement('div');
+                puzzleContainer.className = 'puzzle-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'Solve the Puzzle!';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                const puzzleGame = document.createElement('div');
+                puzzleGame.className = 'puzzle-game';
+                puzzleGame.style.width = '100%';
+                puzzleGame.style.aspectRatio = '1';
+                puzzleGame.style.position = 'relative';
+                puzzleGame.style.backgroundColor = '#F7FAFC';
+                puzzleGame.style.borderRadius = '12px';
+                puzzleGame.style.overflow = 'hidden';
+                
+                // Create draggable puzzle pieces
+                const selectedImage = allImages[this.selectedPuzzleImage];
+                const pieces = this.puzzleDifficulty === 'easy' ? 4 : 9;
+                const grid = this.puzzleDifficulty === 'easy' ? 2 : 3;
+                
+                // Randomize piece order
+                const pieceOrder = Array.from({length: pieces}, (_, i) => i);
+                for (let i = pieceOrder.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pieceOrder[i], pieceOrder[j]] = [pieceOrder[j], pieceOrder[i]];
+                }
+                
+                // Calculate piece size based on container
+                const pieceSize = 100 / grid; // percentage
+                
+                // Create the pieces
+                for (let i = 0; i < pieces; i++) {
+                    const originalPos = pieceOrder[i];
+                    const row = Math.floor(originalPos / grid);
+                    const col = originalPos % grid;
+                    
+                    const piece = document.createElement('div');
+                    piece.className = 'puzzle-piece draggable';
+                    piece.setAttribute('data-original-pos', originalPos);
+                    piece.setAttribute('data-current-pos', i);
+                    
+                    // Set positioning styles for the piece
+                    piece.style.width = `${pieceSize}%`;
+                    piece.style.height = `${pieceSize}%`;
+                    piece.style.position = 'absolute';
+                    piece.style.backgroundImage = `url(${selectedImage.src})`;
+                    piece.style.backgroundSize = `${grid * 100}%`;
+                    piece.style.backgroundPosition = `${col * 100 / (grid-1)}% ${row * 100 / (grid-1)}%`;
+                    piece.style.border = '1px solid white';
+                    piece.style.boxSizing = 'border-box';
+                    
+                    // Position in the grid
+                    const currentRow = Math.floor(i / grid);
+                    const currentCol = i % grid;
+                    piece.style.top = `${currentRow * pieceSize}%`;
+                    piece.style.left = `${currentCol * pieceSize}%`;
+                    
+                    // Make draggable
+                    piece.style.touchAction = 'none';
+                    piece.style.cursor = 'grab';
+                    piece.style.transition = 'transform 0.1s';
+                    
+                    // Setup drag events
+                    this.setupPuzzleDrag(piece);
+                    
+                    puzzleGame.appendChild(piece);
+                }
+                
+                const backButton = document.createElement('button');
+                backButton.className = 'action-button';
+                backButton.style.marginTop = '20px';
+                backButton.innerHTML = '⬅️ Back to Puzzle Maker';
+                backButton.addEventListener('click', () => this.navigateToScreen('puzzle'));
+                
+                puzzleContainer.appendChild(title);
+                puzzleContainer.appendChild(puzzleGame);
+                puzzleContainer.appendChild(backButton);
+                
+                mainContent.appendChild(puzzleContainer);
+            },
+            
+            setupPuzzleDrag(piece) {
+                let startX, startY, initialLeft, initialTop;
+                let targetPiece = null;
+                
+                const onStart = (clientX, clientY) => {
+                    // Start dragging
+                    startX = clientX;
+                    startY = clientY;
+                    
+                    // Store initial position
+                    const style = window.getComputedStyle(piece);
+                    initialLeft = parseInt(style.left);
+                    initialTop = parseInt(style.top);
+                    
+                    // Visual feedback
+                    piece.style.zIndex = '10';
+                    piece.style.cursor = 'grabbing';
+                    piece.style.transform = 'scale(1.05)';
+                    piece.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+                };
+                
+                const onMove = (clientX, clientY) => {
+                    if (startX === undefined) return;
+                    
+                    // Calculate movement
+                    const deltaX = clientX - startX;
+                    const deltaY = clientY - startY;
+                    
+                    // Move the piece
+                    piece.style.left = `${initialLeft + deltaX}px`;
+                    piece.style.top = `${initialTop + deltaY}px`;
+                    
+                    // Check for overlapping pieces (simple center point check)
+                    const pieceRect = piece.getBoundingClientRect();
+                    const pieceCenter = {
+                        x: pieceRect.left + pieceRect.width / 2,
+                        y: pieceRect.top + pieceRect.height / 2
+                    };
+                    
+                    // Find target piece (if any)
+                    targetPiece = null;
+                    document.querySelectorAll('.puzzle-piece').forEach(otherPiece => {
+                        if (otherPiece === piece) return;
+                        
+                        const otherRect = otherPiece.getBoundingClientRect();
+                        if (
+                            pieceCenter.x >= otherRect.left && 
+                            pieceCenter.x <= otherRect.right && 
+                            pieceCenter.y >= otherRect.top && 
+                            pieceCenter.y <= otherRect.bottom
+                        ) {
+                            targetPiece = otherPiece;
+                            targetPiece.style.transform = 'scale(0.95)';
+                            targetPiece.style.opacity = '0.8';
+                        } else if (otherPiece.style.transform === 'scale(0.95)') {
+                            otherPiece.style.transform = '';
+                            otherPiece.style.opacity = '';
+                        }
+                    });
+                };
+                
+                const onEnd = () => {
+                    if (startX === undefined) return;
+                    
+                    // Reset visual feedback
+                    piece.style.zIndex = '';
+                    piece.style.cursor = 'grab';
+                    piece.style.transform = '';
+                    piece.style.boxShadow = '';
+                    
+                    if (targetPiece) {
+                        // Swap positions with target piece
+                        const targetLeft = window.getComputedStyle(targetPiece).left;
+                        const targetTop = window.getComputedStyle(targetPiece).top;
+                        
+                        // Swap current positions
+                        targetPiece.style.left = `${initialLeft}px`;
+                        targetPiece.style.top = `${initialTop}px`;
+                        piece.style.left = targetLeft;
+                        piece.style.top = targetTop;
+                        
+                        // Swap data attributes
+                        const tempPos = piece.getAttribute('data-current-pos');
+                        piece.setAttribute('data-current-pos', targetPiece.getAttribute('data-current-pos'));
+                        targetPiece.setAttribute('data-current-pos', tempPos);
+                        
+                        // Reset target piece styling
+                        targetPiece.style.transform = '';
+                        targetPiece.style.opacity = '';
+                        
+                        // Check if puzzle is solved
+                        this.checkPuzzleSolved();
+                    } else {
+                        // Return to original position if no target piece
+                        piece.style.left = `${initialLeft}px`;
+                        piece.style.top = `${initialTop}px`;
+                    }
+                    
+                    // Reset the drag state
+                    startX = startY = undefined;
+                };
+                
+                // Mouse events
+                piece.addEventListener('mousedown', e => {
+                    onStart(e.clientX, e.clientY);
+                });
+                
+                document.addEventListener('mousemove', e => {
+                    onMove(e.clientX, e.clientY);
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    onEnd();
+                });
+                
+                // Touch events
+                piece.addEventListener('touchstart', e => {
+                    if (e.touches.length !== 1) return;
+                    e.preventDefault(); // Prevent scrolling
+                    const touch = e.touches[0];
+                    onStart(touch.clientX, touch.clientY);
+                });
+                
+                piece.addEventListener('touchmove', e => {
+                    if (e.touches.length !== 1) return;
+                    e.preventDefault(); // Prevent scrolling
+                    const touch = e.touches[0];
+                    onMove(touch.clientX, touch.clientY);
+                });
+                
+                piece.addEventListener('touchend', () => {
+                    onEnd();
+                });
+            },
+            
+            checkPuzzleSolved() {
+                const pieces = document.querySelectorAll('.puzzle-piece');
+                let solved = true;
+                
+                pieces.forEach(piece => {
+                    const originalPos = parseInt(piece.getAttribute('data-original-pos'));
+                    const currentPos = parseInt(piece.getAttribute('data-current-pos'));
+                    
+                    if (originalPos !== currentPos) {
+                        solved = false;
+                    }
+                });
+                
+                if (solved) {
+                    // Celebration animation
+                    pieces.forEach(piece => {
+                        piece.style.border = 'none';
+                        piece.style.transition = 'transform 0.5s';
+                        piece.style.transform = 'scale(1.02)';
+                    });
+                    
+                    // Show victory message
+                    setTimeout(() => {
+                        alert('🎉 Great job! You solved the puzzle! 🎉');
+                        this.navigateToScreen('puzzle');
+                    }, 500);
+                }
+            },
+            
+            // Gallery Screen
+            renderGalleryScreen() {
+                const mainContent = document.getElementById('main-content');
+                
+                const galleryContainer = document.createElement('div');
+                galleryContainer.className = 'gallery-container';
+                
+                const title = document.createElement('h2');
+                title.textContent = 'My Gallery';
+                title.style.color = '#805AD5';
+                title.style.fontSize = '20px';
+                
+                // Grid of images
+                const galleryGrid = document.createElement('div');
+                galleryGrid.className = 'gallery-grid';
+                
+                // Combine photos and drawings for display
+                const allItems = [...this.photos, ...this.drawings];
+                
+                if (allItems.length === 0) {
+                    const emptyMessage = document.createElement('p');
+                    emptyMessage.textContent = 'Your gallery is empty. Take some photos or create drawings!';
+                    emptyMessage.style.textAlign = 'center';
+                    emptyMessage.style.color = '#805AD5';
+                    galleryContainer.appendChild(emptyMessage);
+                } else {
+                    allItems.forEach((item, index) => {
+                        const galleryItem = document.createElement('div');
+                        galleryItem.className = 'gallery-item';
+                        
+                        const img = document.createElement('img');
+                        img.className = 'gallery-image';
+                        img.src = item.thumbnail || item.src;
+                        img.alt = 'Gallery item';
+                        
+                        const overlay = document.createElement('div');
+                        overlay.className = 'gallery-overlay';
+                        
+                        galleryItem.appendChild(img);
+                        galleryItem.appendChild(overlay);
+                        galleryItem.addEventListener('click', () => this.viewGalleryItem(index));
+                        
+                        galleryGrid.appendChild(galleryItem);
+                    });
+                }
+                
+                // Action buttons
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'action-buttons';
+                
+                const saveButton = document.createElement('button');
+                saveButton.className = 'action-button';
+                saveButton.innerHTML = '💾 Save';
+                saveButton.addEventListener('click', () => this.saveAllToDevice());
+                
+                const printButton = document.createElement('button');
+                printButton.className = 'action-button';
+                printButton.innerHTML = '🖨️ Print';
+                printButton.addEventListener('click', () => this.printGallery());
+                
+                const shareButton = document.createElement('button');
+                shareButton.className = 'action-button';
+                shareButton.innerHTML = '📤 Share';
+                shareButton.addEventListener('click', () => this.shareGallery());
+                
+                actionButtons.appendChild(saveButton);
+                actionButtons.appendChild(printButton);
+                actionButtons.appendChild(shareButton);
+                
+                // Add all sections to container
+                galleryContainer.appendChild(title);
+                galleryContainer.appendChild(galleryGrid);
+                galleryContainer.appendChild(actionButtons);
+                
+                mainContent.appendChild(galleryContainer);
+            },
+            
+            viewGalleryItem(index) {
+                // In a real app, this would open a fullscreen view
+                const allItems = [...this.photos, ...this.drawings];
+                
+                if (allItems[index]) {
+                    // Create a modal to view the image
+                    const modal = document.createElement('div');
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.width = '100%';
+                    modal.style.height = '100%';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.zIndex = '9999';
+                    
+                    const img = document.createElement('img');
+                    img.src = allItems[index].src;
+                    img.style.maxWidth = '90%';
+                    img.style.maxHeight = '90%';
+                    img.style.objectFit = 'contain';
+                    
+                    modal.appendChild(img);
+                    document.body.appendChild(modal);
+                    
+                    // Close modal when clicked
+                    modal.addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                    });
+                }
+            },
+            
+            saveAllToDevice() {
+                alert('On a real device, this would save all images to your photo library!');
+                // In a real app, this would use the device's file system API
+            },
+            
+            printGallery() {
+                alert('On a real device, this would open the print dialog!');
+                // In a real app, this would use the device's print API
+            },
+            
+            shareGallery() {
+                alert('On a real device, this would open sharing options!');
+                // In a real app, this would use the Web Share API
+            }
+        };
+        
+        // Start the app when the page loads
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,46 +890,53 @@
         }
         
         body {
-            background-color: #EBF4FF; /* light blue background */
-            overscroll-behavior: none; /* prevents pull-to-refresh on iOS */
-        }
-        
-        /* For Safari on iOS to prevent elastic scrolling while ensuring the bottom nav is visible */
-        html, body {
+            background-color: #EBF4FF;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
             position: fixed;
-            overflow: hidden;
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+            padding: 0;
+            margin: 0;
         }
-        
-        /* Ensure bottom nav is visible on iPad Safari */
+
+        /* Fixed positioning for bottom nav */
         footer {
             background-color: #9F7AEA;
-            padding: 10px;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
-            position: relative;
-            z-index: 100;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0px -2px 10px rgba(0,0,0,0.1);
+            /* Add extra bottom padding for notched iPhones */
+            padding-bottom: env(safe-area-inset-bottom, 10px);
         }
-        
-        /* Add bottom padding to main content to prevent it from being hidden behind nav */
+
+        /* Main content needs bottom padding to not be hidden behind fixed footer */
         main {
             flex: 1;
             overflow-y: auto;
             padding: 15px;
-            position: relative;
-            padding-bottom: 20px;
-            margin-bottom: 0;
+            /* Add padding equal to footer height + extra space */
+            padding-bottom: 80px;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: env(safe-area-inset-bottom, 0px);
+            height: calc(100vh - 100px);
         }
-        
-        /* Ensure app container accounts for iOS safe areas */
+
+        /* Make app container height allow for fixed footer */
         .app-container {
             max-width: 800px;
             margin: 0 auto;
-            height: 100vh;
-            height: calc(100vh - env(safe-area-inset-bottom));
+            height: 100%;
             display: flex;
             flex-direction: column;
             position: relative;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         header {
@@ -73,25 +953,28 @@
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
         
+        /* Make buttons extra large for iPad */
         .nav-button {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             background: none;
             border: none;
             color: white;
-            padding: 5px;
+            padding: 10px 5px;
             border-radius: 8px;
-            min-width: 50px;
-            min-height: 50px;
+            min-width: 60px;
+            min-height: 60px;
         }
         
         .nav-button.active {
             background-color: rgba(255, 255, 255, 0.3);
         }
         
+        /* Make icons bigger */
         .nav-icon {
-            font-size: 24px;
+            font-size: 30px;
             margin-bottom: 4px;
         }
         
@@ -539,6 +1422,7 @@
             photos: [],
             drawings: [],
             cameraStream: null,
+            currentCameraFacing: 'environment',
             currentColor: '#FF4081',
             currentTool: 'brush',
             isDrawing: false,
@@ -586,7 +1470,7 @@
                 // Setup service worker for PWA capabilities
                 if ('serviceWorker' in navigator) {
                     window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('/service-worker.js').then(registration => {
+                        navigator.serviceWorker.register('service-worker.js').then(registration => {
                             console.log('ServiceWorker registration successful');
                         }).catch(error => {
                             console.log('ServiceWorker registration failed: ', error);
@@ -754,7 +1638,7 @@
                 
                 const switchButton = document.createElement('button');
                 switchButton.className = 'camera-button small';
-                switchButton.innerHTML = '🔄';
+                switchButton.innerHTML = this.currentCameraFacing === 'environment' ? '📷↔️' : '🤳';
                 switchButton.addEventListener('click', () => this.toggleCamera());
                 
                 cameraControls.appendChild(galleryButton);
@@ -762,7 +1646,7 @@
                 cameraControls.appendChild(switchButton);
                 
                 const helpText = document.createElement('p');
-                helpText.textContent = 'Find an animal and take its picture!';
+                helpText.textContent = 'Starting camera...';
                 helpText.style.textAlign = 'center';
                 helpText.style.color = '#805AD5';
                 helpText.style.fontSize = '14px';
@@ -779,33 +1663,65 @@
             },
             
             startCamera() {
-                // Access the device camera
+                // First check if we have permission
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ 
+                    // Default to environment camera first
+                    const constraints = { 
                         video: { 
-                            facingMode: 'environment',
+                            facingMode: this.currentCameraFacing,
                             width: { ideal: 1280 },
                             height: { ideal: 720 }
-                        } 
-                    })
+                        },
+                        audio: false
+                    };
+                    
+                    // Try to get camera access
+                    navigator.mediaDevices.getUserMedia(constraints)
                     .then(stream => {
                         const video = document.getElementById('camera-view');
                         if (video) {
                             this.cameraStream = stream;
                             video.srcObject = stream;
+                            
+                            // Add message indicating camera is working
+                            const helpText = document.querySelector('.camera-container p');
+                            if (helpText) {
+                                helpText.textContent = 'Camera ready! Find an animal and take its picture!';
+                            }
                         }
                     })
                     .catch(error => {
                         console.error('Camera error:', error);
-                        alert('Could not access the camera. Please make sure you have given permission.');
+                        
+                        // Show a helpful error message based on the error
+                        let errorMessage = 'Could not access the camera. ';
+                        
+                        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                            errorMessage += 'Please allow camera access in your browser settings.';
+                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                            errorMessage += 'No camera was found on your device.';
+                        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                            errorMessage += 'Your camera might be in use by another application.';
+                        } else {
+                            errorMessage += 'Try using the "Add to Home Screen" option for better camera access.';
+                        }
+                        
+                        alert(errorMessage);
+                        
+                        // Update the UI to show error
+                        const helpText = document.querySelector('.camera-container p');
+                        if (helpText) {
+                            helpText.textContent = 'Camera not available. Try using "Add to Home Screen" option.';
+                            helpText.style.color = '#E53E3E';
+                        }
                     });
                 } else {
-                    alert('Sorry, your browser does not support camera access.');
+                    alert('Sorry, your browser does not support camera access. Try using Safari and adding this app to your home screen.');
                 }
             },
             
             stopCamera() {
-                // Stop the camera stream
+                // Stop the camera stream properly
                 if (this.cameraStream) {
                     this.cameraStream.getTracks().forEach(track => {
                         track.stop();
@@ -818,17 +1734,26 @@
                 // Toggle between front and rear cameras
                 this.stopCamera();
                 
-                const facingMode = this.cameraStream ? 
-                    (this.cameraStream.getVideoTracks()[0].getSettings().facingMode === 'environment' ? 'user' : 'environment') : 
-                    'environment';
+                // Toggle camera direction
+                this.currentCameraFacing = this.currentCameraFacing === 'environment' ? 'user' : 'environment';
                 
-                navigator.mediaDevices.getUserMedia({ 
+                // Update switch camera button to show which camera is active
+                const switchButton = document.querySelector('.camera-button.small:last-child');
+                if (switchButton) {
+                    switchButton.innerHTML = this.currentCameraFacing === 'environment' ? '📷↔️' : '🤳';
+                }
+                
+                // Request camera with new facing mode
+                const constraints = { 
                     video: { 
-                        facingMode: facingMode,
+                        facingMode: this.currentCameraFacing,
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
-                    } 
-                })
+                    },
+                    audio: false
+                };
+                
+                navigator.mediaDevices.getUserMedia(constraints)
                 .then(stream => {
                     const video = document.getElementById('camera-view');
                     if (video) {
@@ -838,6 +1763,11 @@
                 })
                 .catch(error => {
                     console.error('Camera switch error:', error);
+                    alert('Could not switch camera. Your device might not support multiple cameras.');
+                    
+                    // Try to revert to the previously working camera
+                    this.currentCameraFacing = this.currentCameraFacing === 'environment' ? 'user' : 'environment';
+                    this.startCamera();
                 });
             },
             
@@ -866,582 +1796,4 @@
                 // Show capture animation
                 const viewfinder = document.querySelector('.viewfinder');
                 if (viewfinder) {
-                    viewfinder.style.transition = 'opacity 0.1s';
-                    viewfinder.style.opacity = '0.5';
-                    setTimeout(() => {
-                        viewfinder.style.opacity = '1';
-                    }, 100);
-                }
-                
-                // Optionally navigate to gallery or drawing
-                setTimeout(() => {
-                    if (confirm('Great photo! Do you want to draw on it?')) {
-                        this.navigateToScreen('drawing');
-                    }
-                }, 300);
-            },
-            
-            // Drawing Screen
-            renderDrawingScreen() {
-                const mainContent = document.getElementById('main-content');
-                
-                const drawingContainer = document.createElement('div');
-                drawingContainer.className = 'drawing-container';
-                
-                const title = document.createElement('h2');
-                title.textContent = 'Drawing Studio';
-                title.style.color = '#805AD5';
-                title.style.fontSize = '20px';
-                
-                // Create canvas for drawing
-                const canvasContainer = document.createElement('div');
-                canvasContainer.style.width = '100%';
-                
-                const canvas = document.createElement('canvas');
-                canvas.id = 'drawing-canvas';
-                canvas.width = 800;
-                canvas.height = 800;
-                
-                canvasContainer.appendChild(canvas);
-                
-                // Color palette
-                const colorPalette = document.createElement('div');
-                colorPalette.className = 'color-palette';
-                
-                this.colors.forEach((colorObj, index) => {
-                    const colorButton = document.createElement('button');
-                    colorButton.className = `color-button ${colorObj.active ? 'active' : ''}`;
-                    colorButton.style.backgroundColor = colorObj.color;
-                    colorButton.dataset.color = colorObj.color;
-                    colorButton.addEventListener('click', () => this.selectColor(index));
-                    colorPalette.appendChild(colorButton);
-                });
-                
-                // Drawing tools
-                const drawingTools = document.createElement('div');
-                drawingTools.className = 'drawing-tools';
-                
-                this.tools.forEach((tool, index) => {
-                    const toolButton = document.createElement('button');
-                    toolButton.className = `tool-button ${tool.active ? 'active' : ''}`;
-                    toolButton.textContent = tool.icon;
-                    toolButton.dataset.tool = tool.id;
-                    toolButton.addEventListener('click', () => this.selectTool(index));
-                    drawingTools.appendChild(toolButton);
-                });
-                
-                // Templates row
-                const templatesRow = document.createElement('div');
-                templatesRow.className = 'templates-row';
-                
-                this.templates.forEach(template => {
-                    const templateItem = document.createElement('div');
-                    templateItem.className = 'template-item';
-                    
-                    const templateIcon = document.createElement('div');
-                    templateIcon.className = 'template-icon';
-                    templateIcon.textContent = template.icon;
-                    
-                    const templateLabel = document.createElement('div');
-                    templateLabel.className = 'template-label';
-                    templateLabel.textContent = template.label;
-                    
-                    templateItem.appendChild(templateIcon);
-                    templateItem.appendChild(templateLabel);
-                    templateItem.addEventListener('click', () => this.addTemplate(template));
-                    
-                    templatesRow.appendChild(templateItem);
-                });
-                
-                // Clear and Save buttons
-                const actionButtons = document.createElement('div');
-                actionButtons.className = 'action-buttons';
-                
-                const clearButton = document.createElement('button');
-                clearButton.className = 'action-button';
-                clearButton.innerHTML = '🗑️ Clear';
-                clearButton.addEventListener('click', () => this.clearCanvas());
-                
-                const saveButton = document.createElement('button');
-                saveButton.className = 'action-button';
-                saveButton.innerHTML = '💾 Save';
-                saveButton.addEventListener('click', () => this.saveDrawing());
-                
-                actionButtons.appendChild(clearButton);
-                actionButtons.appendChild(saveButton);
-                
-                // Add all elements to container
-                drawingContainer.appendChild(title);
-                drawingContainer.appendChild(canvasContainer);
-                drawingContainer.appendChild(colorPalette);
-                drawingContainer.appendChild(drawingTools);
-                drawingContainer.appendChild(templatesRow);
-                drawingContainer.appendChild(actionButtons);
-                
-                mainContent.appendChild(drawingContainer);
-                
-                // Initialize the canvas
-                this.initDrawingCanvas();
-            },
-            
-            initDrawingCanvas() {
-                const canvas = document.getElementById('drawing-canvas');
-                if (!canvas) return;
-                
-                const ctx = canvas.getContext('2d');
-                
-                // Set white background
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // If we're editing the last taken photo
-                if (this.photos.length > 0 && this.currentScreen === 'drawing') {
-                    const img = new Image();
-                    img.onload = () => {
-                        // Draw the image centered and scaled to fit
-                        const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.9;
-                        const x = (canvas.width - img.width * scale) / 2;
-                        const y = (canvas.height - img.height * scale) / 2;
-                        
-                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                    };
-                    img.src = this.photos[0].src;
-                }
-                
-                // Set up drawing events
-                canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-                canvas.addEventListener('mousemove', this.draw.bind(this));
-                canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-                canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
-                
-                // Touch events for mobile
-                canvas.addEventListener('touchstart', this.startDrawingTouch.bind(this));
-                canvas.addEventListener('touchmove', this.drawTouch.bind(this));
-                canvas.addEventListener('touchend', this.stopDrawing.bind(this));
-            },
-            
-            startDrawing(e) {
-                this.isDrawing = true;
-                this.lastX = e.offsetX;
-                this.lastY = e.offsetY;
-            },
-            
-            startDrawingTouch(e) {
-                e.preventDefault();
-                if (e.touches.length === 1) {
-                    const touch = e.touches[0];
-                    const canvas = document.getElementById('drawing-canvas');
-                    const rect = canvas.getBoundingClientRect();
-                    this.lastX = touch.clientX - rect.left;
-                    this.lastY = touch.clientY - rect.top;
-                    this.isDrawing = true;
-                }
-            },
-            
-            draw(e) {
-                if (!this.isDrawing) return;
-                
-                const canvas = document.getElementById('drawing-canvas');
-                const ctx = canvas.getContext('2d');
-                
-                if (this.currentTool === 'brush') {
-                    ctx.strokeStyle = this.currentColor;
-                    ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(this.lastX, this.lastY);
-                    ctx.lineTo(e.offsetX, e.offsetY);
-                    ctx.stroke();
-                    
-                    this.lastX = e.offsetX;
-                    this.lastY = e.offsetY;
-                } else if (this.currentTool === 'stamp') {
-                    // Simple stamp tool
-                    ctx.fillStyle = this.currentColor;
-                    ctx.beginPath();
-                    ctx.arc(e.offsetX, e.offsetY, 15, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            },
-            
-            drawTouch(e) {
-                e.preventDefault();
-                if (!this.isDrawing || e.touches.length !== 1) return;
-                
-                const touch = e.touches[0];
-                const canvas = document.getElementById('drawing-canvas');
-                const rect = canvas.getBoundingClientRect();
-                const offsetX = touch.clientX - rect.left;
-                const offsetY = touch.clientY - rect.top;
-                
-                const ctx = canvas.getContext('2d');
-                
-                if (this.currentTool === 'brush') {
-                    ctx.strokeStyle = this.currentColor;
-                    ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(this.lastX, this.lastY);
-                    ctx.lineTo(offsetX, offsetY);
-                    ctx.stroke();
-                    
-                    this.lastX = offsetX;
-                    this.lastY = offsetY;
-                } else if (this.currentTool === 'stamp') {
-                    // Simple stamp tool
-                    ctx.fillStyle = this.currentColor;
-                    ctx.beginPath();
-                    ctx.arc(offsetX, offsetY, 15, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            },
-            
-            stopDrawing() {
-                this.isDrawing = false;
-            },
-            
-            selectColor(index) {
-                // Update active color
-                this.colors.forEach((colorObj, i) => {
-                    colorObj.active = (i === index);
-                });
-                this.currentColor = this.colors[index].color;
-                
-                // Update UI
-                const colorButtons = document.querySelectorAll('.color-button');
-                colorButtons.forEach((button, i) => {
-                    button.classList.toggle('active', i === index);
-                });
-            },
-            
-            selectTool(index) {
-                // Update active tool
-                this.tools.forEach((tool, i) => {
-                    tool.active = (i === index);
-                });
-                this.currentTool = this.tools[index].id;
-                
-                // Update UI
-                const toolButtons = document.querySelectorAll('.tool-button');
-                toolButtons.forEach((button, i) => {
-                    button.classList.toggle('active', i === index);
-                });
-            },
-            
-            addTemplate(template) {
-                const canvas = document.getElementById('drawing-canvas');
-                if (!canvas) return;
-                
-                const ctx = canvas.getContext('2d');
-                
-                // Draw a template icon at the center
-                ctx.font = '60px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(template.icon, canvas.width / 2, canvas.height / 2);
-            },
-            
-            clearCanvas() {
-                const canvas = document.getElementById('drawing-canvas');
-                if (!canvas) return;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            },
-            
-            saveDrawing() {
-                const canvas = document.getElementById('drawing-canvas');
-                if (!canvas) return;
-                
-                // Get the image as data URL
-                const imageDataUrl = canvas.toDataURL('image/png');
-                
-                // Add to drawings array
-                this.drawings.unshift({
-                    src: imageDataUrl,
-                    thumbnail: imageDataUrl,
-                    timestamp: Date.now()
-                });
-                
-                alert('Drawing saved! You can find it in your gallery.');
-            },
-            
-            // Puzzle Screen
-            renderPuzzleScreen() {
-                const mainContent = document.getElementById('main-content');
-                
-                const puzzleContainer = document.createElement('div');
-                puzzleContainer.className = 'puzzle-container';
-                
-                const title = document.createElement('h2');
-                title.textContent = 'Puzzle Creator';
-                title.style.color = '#805AD5';
-                title.style.fontSize = '20px';
-                
-                // Image selection section
-                const selectionSection = document.createElement('div');
-                selectionSection.className = 'selection-section';
-                
-                const imageLabel = document.createElement('p');
-                imageLabel.textContent = 'Select an image for your puzzle:';
-                imageLabel.style.color = '#805AD5';
-                imageLabel.style.fontSize = '14px';
-                
-                const puzzleImages = document.createElement('div');
-                puzzleImages.className = 'puzzle-images';
-                
-                // Combine photos and drawings for puzzle creation
-                const allImages = [...this.photos, ...this.drawings];
-                
-                allImages.slice(0, 6).forEach((image, index) => {
-                    const puzzleImage = document.createElement('div');
-                    puzzleImage.className = `puzzle-image ${this.selectedPuzzleImage === index ? 'active' : ''}`;
-                    puzzleImage.addEventListener('click', () => this.selectPuzzleImage(index));
-                    
-                    const img = document.createElement('img');
-                    img.src = image.thumbnail || image.src;
-                    img.alt = 'Puzzle image';
-                    
-                    puzzleImage.appendChild(img);
-                    puzzleImages.appendChild(puzzleImage);
-                });
-                
-                selectionSection.appendChild(imageLabel);
-                selectionSection.appendChild(puzzleImages);
-                
-                // Difficulty selection
-                const difficultySection = document.createElement('div');
-                difficultySection.className = 'difficulty-section';
-                
-                const difficultyLabel = document.createElement('p');
-                difficultyLabel.textContent = 'Choose puzzle difficulty:';
-                difficultyLabel.style.color = '#805AD5';
-                difficultyLabel.style.fontSize = '14px';
-                
-                const difficultyButtons = document.createElement('div');
-                difficultyButtons.className = 'difficulty-buttons';
-                
-                const easyButton = document.createElement('button');
-                easyButton.className = `difficulty-button ${this.puzzleDifficulty === 'easy' ? 'active' : ''}`;
-                easyButton.textContent = 'Easy (4 pieces)';
-                easyButton.addEventListener('click', () => this.setPuzzleDifficulty('easy'));
-                
-                const mediumButton = document.createElement('button');
-                mediumButton.className = `difficulty-button ${this.puzzleDifficulty === 'medium' ? 'active' : ''}`;
-                mediumButton.textContent = 'Medium (9 pieces)';
-                mediumButton.addEventListener('click', () => this.setPuzzleDifficulty('medium'));
-                
-                difficultyButtons.appendChild(easyButton);
-                difficultyButtons.appendChild(mediumButton);
-                
-                difficultySection.appendChild(difficultyLabel);
-                difficultySection.appendChild(difficultyButtons);
-                
-                // Puzzle preview
-                const puzzlePreview = document.createElement('div');
-                puzzlePreview.className = 'puzzle-preview';
-                
-                if (this.selectedPuzzleImage !== null && allImages[this.selectedPuzzleImage]) {
-                    const puzzleGrid = document.createElement('div');
-                    puzzleGrid.className = `puzzle-grid ${this.puzzleDifficulty}`;
-                    
-                    const pieces = this.puzzleDifficulty === 'easy' ? 4 : 9;
-                    
-                    for (let i = 0; i < pieces; i++) {
-                        const puzzlePiece = document.createElement('div');
-                        puzzlePiece.className = 'puzzle-piece';
-                        puzzleGrid.appendChild(puzzlePiece);
-                    }
-                    
-                    puzzlePreview.appendChild(puzzleGrid);
-                } else {
-                    const placeholderText = document.createElement('div');
-                    placeholderText.style.width = '100%';
-                    placeholderText.style.height = '100%';
-                    placeholderText.style.display = 'flex';
-                    placeholderText.style.alignItems = 'center';
-                    placeholderText.style.justifyContent = 'center';
-                    placeholderText.style.color = '#CBD5E0';
-                    placeholderText.textContent = 'Select an image to create a puzzle!';
-                    
-                    puzzlePreview.appendChild(placeholderText);
-                }
-                
-                // Create button
-                const createButton = document.createElement('button');
-                createButton.className = 'create-button';
-                createButton.textContent = 'Create My Puzzle!';
-                createButton.disabled = this.selectedPuzzleImage === null;
-                createButton.addEventListener('click', () => this.createPuzzle());
-                
-                // Add all sections to container
-                puzzleContainer.appendChild(title);
-                puzzleContainer.appendChild(selectionSection);
-                puzzleContainer.appendChild(difficultySection);
-                puzzleContainer.appendChild(puzzlePreview);
-                puzzleContainer.appendChild(createButton);
-                
-                mainContent.appendChild(puzzleContainer);
-            },
-            
-            selectPuzzleImage(index) {
-                this.selectedPuzzleImage = index;
-                this.navigateToScreen('puzzle'); // Refresh the screen
-            },
-            
-            setPuzzleDifficulty(difficulty) {
-                this.puzzleDifficulty = difficulty;
-                this.navigateToScreen('puzzle'); // Refresh the screen
-            },
-            
-            createPuzzle() {
-                // In a real app, this would create an interactive puzzle
-                // For this demo, we'll just show a success message
-                alert('Puzzle created! You can now play with it.');
-                
-                // In a real implementation, you would:
-                // 1. Create a canvas with the selected image
-                // 2. Divide it into pieces based on difficulty
-                // 3. Randomize piece positions
-                // 4. Create an interactive drag-and-drop puzzle game
-            },
-            
-            // Gallery Screen
-            renderGalleryScreen() {
-                const mainContent = document.getElementById('main-content');
-                
-                const galleryContainer = document.createElement('div');
-                galleryContainer.className = 'gallery-container';
-                
-                const title = document.createElement('h2');
-                title.textContent = 'My Gallery';
-                title.style.color = '#805AD5';
-                title.style.fontSize = '20px';
-                
-                // Grid of images
-                const galleryGrid = document.createElement('div');
-                galleryGrid.className = 'gallery-grid';
-                
-                // Combine photos and drawings for display
-                const allItems = [...this.photos, ...this.drawings];
-                
-                if (allItems.length === 0) {
-                    const emptyMessage = document.createElement('p');
-                    emptyMessage.textContent = 'Your gallery is empty. Take some photos or create drawings!';
-                    emptyMessage.style.textAlign = 'center';
-                    emptyMessage.style.color = '#805AD5';
-                    galleryContainer.appendChild(emptyMessage);
-                } else {
-                    allItems.forEach((item, index) => {
-                        const galleryItem = document.createElement('div');
-                        galleryItem.className = 'gallery-item';
-                        
-                        const img = document.createElement('img');
-                        img.className = 'gallery-image';
-                        img.src = item.thumbnail || item.src;
-                        img.alt = 'Gallery item';
-                        
-                        const overlay = document.createElement('div');
-                        overlay.className = 'gallery-overlay';
-                        
-                        galleryItem.appendChild(img);
-                        galleryItem.appendChild(overlay);
-                        galleryItem.addEventListener('click', () => this.viewGalleryItem(index));
-                        
-                        galleryGrid.appendChild(galleryItem);
-                    });
-                }
-                
-                // Action buttons
-                const actionButtons = document.createElement('div');
-                actionButtons.className = 'action-buttons';
-                
-                const saveButton = document.createElement('button');
-                saveButton.className = 'action-button';
-                saveButton.innerHTML = '💾 Save';
-                saveButton.addEventListener('click', () => this.saveAllToDevice());
-                
-                const printButton = document.createElement('button');
-                printButton.className = 'action-button';
-                printButton.innerHTML = '🖨️ Print';
-                printButton.addEventListener('click', () => this.printGallery());
-                
-                const shareButton = document.createElement('button');
-                shareButton.className = 'action-button';
-                shareButton.innerHTML = '📤 Share';
-                shareButton.addEventListener('click', () => this.shareGallery());
-                
-                actionButtons.appendChild(saveButton);
-                actionButtons.appendChild(printButton);
-                actionButtons.appendChild(shareButton);
-                
-                // Add all sections to container
-                galleryContainer.appendChild(title);
-                galleryContainer.appendChild(galleryGrid);
-                galleryContainer.appendChild(actionButtons);
-                
-                mainContent.appendChild(galleryContainer);
-            },
-            
-            viewGalleryItem(index) {
-                // In a real app, this would open a fullscreen view
-                const allItems = [...this.photos, ...this.drawings];
-                
-                if (allItems[index]) {
-                    // Create a modal to view the image
-                    const modal = document.createElement('div');
-                    modal.style.position = 'fixed';
-                    modal.style.top = '0';
-                    modal.style.left = '0';
-                    modal.style.width = '100%';
-                    modal.style.height = '100%';
-                    modal.style.backgroundColor = 'rgba(0,0,0,0.8)';
-                    modal.style.display = 'flex';
-                    modal.style.alignItems = 'center';
-                    modal.style.justifyContent = 'center';
-                    modal.style.zIndex = '9999';
-                    
-                    const img = document.createElement('img');
-                    img.src = allItems[index].src;
-                    img.style.maxWidth = '90%';
-                    img.style.maxHeight = '90%';
-                    img.style.objectFit = 'contain';
-                    
-                    modal.appendChild(img);
-                    document.body.appendChild(modal);
-                    
-                    // Close modal when clicked
-                    modal.addEventListener('click', () => {
-                        document.body.removeChild(modal);
-                    });
-                }
-            },
-            
-            saveAllToDevice() {
-                alert('On a real device, this would save all images to your photo library!');
-                // In a real app, this would use the device's file system API
-            },
-            
-            printGallery() {
-                alert('On a real device, this would open the print dialog!');
-                // In a real app, this would use the device's print API
-            },
-            
-            shareGallery() {
-                alert('On a real device, this would open sharing options!');
-                // In a real app, this would use the Web Share API
-            }
-        };
-        
-        // Start the app when the page loads
-        window.addEventListener('load', () => {
-            app.init();
-        });
-    </script>
-</body>
-</html>
+                    viewfinder
